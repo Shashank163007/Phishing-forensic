@@ -2,70 +2,116 @@ import express from 'express';
 import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
 const app = express();
-
-// Enable CORS for all origins so the Chrome Extension can reach it
 app.use(cors());
 app.use(express.json());
+
+// Local Storage Setup
+const DATA_DIR = './data';
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const HISTORY_FILE = path.join(DATA_DIR, 'history.json');
+
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify([]));
+if (!fs.existsSync(HISTORY_FILE)) fs.writeFileSync(HISTORY_FILE, JSON.stringify([]));
+
+const getUsers = () => JSON.parse(fs.readFileSync(USERS_FILE));
+const saveUsers = (users) => fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+const getHistory = () => JSON.parse(fs.readFileSync(HISTORY_FILE));
+const saveHistory = (history) => fs.writeFileSync(HISTORY_FILE, JSON.stringify(history, null, 2));
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
+// --- Auth Endpoints ---
+
+app.post('/api/auth/signup', (req, res) => {
+  const { email, password, fullName, organization, role } = req.body;
+  const users = getUsers();
+  if (users.find(u => u.email === email)) return res.status(400).json({ error: 'User exists' });
+  
+  const newUser = { id: Date.now().toString(), email, password, fullName, organization, role };
+  users.push(newUser);
+  saveUsers(users);
+  res.status(201).json({ id: newUser.id, email: newUser.email, fullName: newUser.fullName });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  const user = getUsers().find(u => u.email === email && u.password === password);
+  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+  res.status(200).json({ id: user.id, email: user.email, fullName: user.fullName });
+});
+
+// --- Analysis & History Endpoints ---
+
 app.post('/api/analyze', async (req, res) => {
   try {
-    const { subject, sender, senderName, body } = req.body;
-
-    if (!body || !sender) {
-      return res.status(400).json({ error: 'Missing required email fields (sender, body)' });
-    }
+    const { subject, sender, senderName, body, userId } = req.body;
+    if (!body || !sender) return res.status(400).json({ error: 'Missing fields' });
 
     const prompt = `
-    Perform a forensic security assessment on the following email to detect phishing.
-    Return ONLY a valid JSON object. Do not include markdown formatting like \`\`\`json.
+    Perform a forensic security assessment on the following email.
+    Return ONLY a valid JSON object.
     
     Email Details:
-    Sender Name: ${senderName || 'Unknown'}
-    Sender Email: ${sender}
+    Sender: ${senderName || 'Unknown'} <${sender}>
     Subject: ${subject || 'No Subject'}
-    Body:
-    ${body}
+    Body: ${body}
 
-    JSON Schema requirement:
+    JSON Schema:
     {
       "overall_risk": "GREEN" | "AMBER" | "RED",
-      "risk_score": <number between 0 and 100>,
-      "verdict": "<Short 1-2 sentence explanation>",
-      "findings": [
-        "<bullet point finding 1>",
-        "<bullet point finding 2>"
-      ]
-    }
-    `;
+      "risk_score": 0-100,
+      "verdict": "string",
+      "findings": ["string"],
+      "suspicious_phrases": ["string"]
+    }`;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let textResponse = response.text();
-    
-    textResponse = textResponse.replace(/^```json/m, '').replace(/```$/m, '').trim();
+    const textResponse = result.response.text().replace(/^```json/m, '').replace(/```$/m, '').trim();
+    const aiResult = JSON.parse(textResponse);
 
-    try {
-      const parsedReport = JSON.parse(textResponse);
-      return res.status(200).json(parsedReport);
-    } catch (parseError) {
-      console.error('Failed to parse Gemini response:', textResponse);
-      return res.status(500).json({ error: 'AI returned invalid JSON format' });
+    // Save to history if userId provided
+    if (userId) {
+      const history = getHistory();
+      history.push({
+        id: Date.now().toString(),
+        userId,
+        subject,
+        sender,
+        score: aiResult.risk_score,
+        level: aiResult.overall_risk.toLowerCase(),
+        verdict: aiResult.verdict,
+        flags: aiResult.findings,
+        timestamp: new Date().toISOString()
+      });
+      saveHistory(history);
     }
 
+    return res.status(200).json(aiResult);
   } catch (error) {
-    console.error('Analysis error:', error);
-    return res.status(500).json({ error: 'Internal server error during analysis' });
+    console.error(error);
+    res.status(500).json({ error: 'Analysis failed' });
   }
 });
 
-const PORT = process.env.PORT || 3000;
+app.get('/api/history/:userId', (req, res) => {
+  const history = getHistory().filter(h => h.userId === req.params.userId);
+  res.json(history);
+});
+
+// Get ALL history for SOC Dashboard
+app.get('/api/history', (req, res) => {
+  res.json(getHistory());
+});
+
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Railway Backend running perfectly on port ${PORT}`);
+  console.log(`Normal Auth Backend running on port ${PORT}`);
 });

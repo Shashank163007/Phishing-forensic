@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DOM Highlighting Test</title>
+  <style>
+    body { font-family: 'Inter', Arial, sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; }
+    .email-body { background: #1e293b; padding: 24px; border-radius: 12px; max-width: 700px; margin: 20px auto; line-height: 1.8; }
+    h1 { text-align: center; color: #3b82f6; }
+    .status { text-align: center; color: #94a3b8; margin-bottom: 20px; }
+    button { display: block; margin: 20px auto; background: #3b82f6; color: white; border: none; padding: 14px 28px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    button:hover { background: #2563eb; }
+  </style>
+</head>
+<body>
+  <h1>🛡️ Phishing Forensics — DOM Highlighting Test</h1>
+  <p class="status">Click the button below to simulate the AI returning suspicious phrases and highlighting them in the email body.</p>
+  
+  <button onclick="runTest()">▶️ Run Highlighting Test</button>
+
+  <div class="email-body" id="test-email">
+    <p>Dear Customer,</p>
+    <p>We have detected unusual activity on your account. You must <strong>verify your identity immediately</strong> or your account will be suspended within 24 hours.</p>
+    <p>Please click here now to confirm your details: <a href="http://evil-phish.com/login" style="color: #60a5fa;">https://secure-bank.com/verify</a></p>
+    <p>If you do not act now, your account will be permanently locked. This is your final warning.</p>
+    <p>Failure to respond to this urgent notice will result in immediate action required on your part.</p>
+    <p>Sincerely,<br>Security Team</p>
+  </div>
+
+  <div id="result" style="text-align: center; margin-top: 20px; color: #10b981; font-weight: 600;"></div>
+
+  <script>
+    // This is the exact same function from content.js
+    function highlightSuspiciousPhrases(node, phrases) {
+      phrases.sort((a, b) => b.length - a.length);
+
+      const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false);
+      const textNodes = [];
+      while (walker.nextNode()) {
+        if (walker.currentNode.parentNode.nodeName !== 'SCRIPT' && 
+            walker.currentNode.parentNode.nodeName !== 'STYLE' &&
+            !walker.currentNode.parentNode.closest('.pf-risk-popup')) {
+          textNodes.push(walker.currentNode);
+        }
+      }
+
+      let highlightCount = 0;
+      textNodes.forEach(textNode => {
+        let text = textNode.nodeValue;
+        let modified = false;
+
+        phrases.forEach(phrase => {
+          if (phrase.length < 4) return;
+          const regex = new RegExp(`(${phrase.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')})`, 'gi');
+          if (regex.test(text)) {
+            text = text.replace(regex, `<mark style="background-color: #fef08a; color: #991b1b; padding: 2px 4px; border-radius: 4px; font-weight: bold; border-bottom: 2px solid #ef4444; cursor: help;" title="⚠️ Threat flagged by Phishing Forensics AI">$1</mark>`);
+            modified = true;
+            highlightCount++;
+          }
+        });
+
+        if (modified) {
+          const span = document.createElement('span');
+          span.innerHTML = text;
+          textNode.parentNode.replaceChild(span, textNode);
+        }
+      });
+
+      return highlightCount;
+    }
+
+    function runTest() {
+      const emailNode = document.getElementById('test-email');
+      
+      // Simulated Groq AI response — these are the phrases the AI would flag
+      const suspiciousPhrasesFromAI = [
+        "verify your identity immediately",
+        "account will be suspended",
+        "click here now",
+        "final warning",
+        "immediate action required",
+        "act now"
+      ];
+
+      const count = highlightSuspiciousPhrases(emailNode, suspiciousPhrasesFromAI);
+      document.getElementById('result').textContent = `✅ Test complete! ${count} suspicious phrases highlighted in yellow/red.`;
+    }
+  </script>
+</body>
+</html>

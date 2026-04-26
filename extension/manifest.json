@@ -5,6 +5,7 @@
   "description": "AI-powered Chrome extension that auto-scans Gmail emails and returns forensic reports.",
   "permissions": [
     "activeTab",
+    "tabs",
     "scripting",
     "storage",
     "identity"

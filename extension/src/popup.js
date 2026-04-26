@@ -1,15 +1,6 @@
-import { auth, db } from './firebase.js';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithCredential
-} from 'firebase/auth';
-import { collection, query, orderBy, getDocs, limit, setDoc, doc } from 'firebase/firestore';
+const BACKEND_URL = 'http://localhost:5000';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Elements
   const authView = document.getElementById('auth-view');
   const sandboxView = document.getElementById('sandbox-view');
@@ -26,11 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let isLogin = true;
 
-  // Monitor Auth State
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
+  // Check Current Session
+  chrome.storage.local.get(['user'], (result) => {
+    if (result.user) {
       showSandbox();
-      loadHistory(user.uid);
+      loadHistory(result.user.id);
     } else {
       showAuth();
     }
@@ -45,6 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function showSandbox() {
     authView.classList.add('hidden');
     sandboxView.classList.remove('hidden');
+  }
+
+  // Dashboard button
+  const dashboardBtn = document.getElementById('open-dashboard');
+  if (dashboardBtn) {
+    dashboardBtn.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'http://localhost:3000' });
+    });
   }
 
   // Tabs
@@ -68,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     authError.textContent = '';
   });
 
-  // Email Auth
+  // Auth Action
   authBtn.addEventListener('click', async () => {
     const email = emailInput.value;
     const password = passwordInput.value;
@@ -97,19 +96,29 @@ document.addEventListener('DOMContentLoaded', () => {
     authBtn.disabled = true;
 
     try {
-      if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
-      } else {
-        const userCred = await createUserWithEmailAndPassword(auth, email, password);
-        // Save additional details to Firestore
-        await setDoc(doc(db, 'users', userCred.user.uid), {
-          email: email,
-          fullName: document.getElementById('fullname').value,
-          organization: document.getElementById('organization').value,
-          role: document.getElementById('role').value,
-          createdAt: new Date().toISOString()
-        });
-      }
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
+      const body = isLogin ? { email, password } : { 
+        email, 
+        password, 
+        fullName: document.getElementById('fullname').value,
+        organization: document.getElementById('organization').value,
+        role: document.getElementById('role').value
+      };
+
+      const res = await fetch(`${BACKEND_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Auth failed');
+
+      chrome.storage.local.set({ user: data }, () => {
+        showSandbox();
+        loadHistory(data.id);
+      });
+
     } catch (error) {
       authError.textContent = `Error: ${error.message}`;
     } finally {
@@ -119,34 +128,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Logout
-  logoutBtn.addEventListener('click', async () => {
-    try {
-      await signOut(auth);
-      if (typeof chrome !== 'undefined' && chrome.identity) {
-        chrome.identity.clearAllCachedAuthTokens(() => {});
-      }
-    } catch (error) {
-      console.error('Logout error', error);
-    }
+  logoutBtn.addEventListener('click', () => {
+    chrome.storage.local.remove(['user'], () => {
+      showAuth();
+    });
   });
 
   // Load History
-  async function loadHistory(uid) {
+  async function loadHistory(userId) {
     historyContainer.innerHTML = '<p style="color: #64748b; font-size: 12px; text-align: center; margin-top: 20px;">Loading history...</p>';
     try {
-      const q = query(collection(db, 'users', uid, 'history'), orderBy('timestamp', 'desc'), limit(10));
-      const querySnapshot = await getDocs(q);
+      const res = await fetch(`${BACKEND_URL}/api/history/${userId}`);
+      const history = await res.json();
       
       historyContainer.innerHTML = '';
       
-      if (querySnapshot.empty) {
+      if (!history || history.length === 0) {
         historyContainer.innerHTML = '<p style="color: #64748b; font-size: 12px; text-align: center; margin-top: 20px;">No scans yet. Open an email in Gmail to start!</p>';
         return;
       }
 
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        const date = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
+      history.forEach((data) => {
+        const date = new Date(data.timestamp).toLocaleString();
         
         let levelClass = '';
         let icon = '✅';

@@ -1,8 +1,4 @@
-import { auth, db } from './firebase.js';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-
-const GROQ_API_KEY = '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';
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const BACKEND_URL = 'http://localhost:5000';
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'ANALYZE_EMAIL') {
@@ -10,75 +6,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then(result => sendResponse({ success: true, result }))
       .catch(error => sendResponse({ success: false, error: error.message }));
       
-    // Return true to indicate we will send a response asynchronously
     return true;
   }
 });
 
 async function handleEmailAnalysis(emailData) {
   try {
-    const prompt = `
-    Perform a forensic security assessment on the following email to detect phishing.
-    Return ONLY a valid JSON object. Do not include markdown formatting like \`\`\`json.
-    
-    Email Details:
-    Sender Name: ${emailData.senderName || 'Unknown'}
-    Sender Email: ${emailData.sender}
-    Subject: ${emailData.subject || 'No Subject'}
-    Body:
-    ${emailData.body}
+    // Get userId from storage
+    const storage = await chrome.storage.local.get(['user']);
+    const userId = storage.user ? storage.user.id : null;
 
-    JSON Schema requirement:
-    {
-      "overall_risk": "GREEN" | "AMBER" | "RED",
-      "risk_score": 0 to 100,
-      "verdict": "Short explanation",
-      "findings": ["finding 1", "finding 2"],
-      "suspicious_phrases": ["exact phrase 1 from email", "exact phrase 2 from email"]
-    }`;
-
-    const response = await fetch(GROQ_URL, {
+    const response = await fetch(`${BACKEND_URL}/api/analyze`, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.1,
-        response_format: { type: "json_object" }
+        ...emailData,
+        userId: userId
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("GROQ API FULL ERROR:", errorText);
-      throw new Error(`Groq API error: ${response.status} - ${errorText}`);
+      throw new Error(`Backend error: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
-    let textResponse = data.choices[0].message.content;
-    textResponse = textResponse.replace(/^```json/m, '').replace(/```$/m, '').trim();
-
-    const aiResult = JSON.parse(textResponse);
-    
-    // Save to Firestore asynchronously without blocking the AI response
-    auth.authStateReady().then(() => {
-      const user = auth.currentUser;
-      if (user) {
-        addDoc(collection(db, 'users', user.uid, 'history'), {
-          subject: emailData.subject,
-          sender: emailData.sender,
-          score: aiResult.risk_score,
-          level: aiResult.overall_risk.toLowerCase(),
-          verdict: aiResult.verdict,
-          flags: aiResult.findings,
-          timestamp: serverTimestamp()
-        }).catch(err => console.error("Firestore save error:", err));
-      }
-    });
-
+    const aiResult = await response.json();
     return aiResult;
   } catch (error) {
     console.error("Background AI Analysis Error:", error);
