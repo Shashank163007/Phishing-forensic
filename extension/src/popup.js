@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const dashboardBtn = document.getElementById('open-dashboard');
   if (dashboardBtn) {
     dashboardBtn.addEventListener('click', () => {
-      chrome.tabs.create({ url: 'http://localhost:3000' });
+      chrome.tabs.create({ url: 'https://dashboard-tan-gamma-24.vercel.app' });
     });
   }
 
