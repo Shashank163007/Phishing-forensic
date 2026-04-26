@@ -1,0 +1,17 @@
+{
+  "name": "phishing-forensics-backend",
+  "version": "1.0.0",
+  "description": "Vercel backend for Phishing Forensics Chrome Extension",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5"
+  }
+}

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phishing Forensics AI</title>
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    .google-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background-color: #ffffff;
+      color: #0f172a;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .google-btn:hover { background-color: #e2e8f0; }
+    .google-icon { width: 18px; height: 18px; }
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 16px 0;
+      color: #64748b;
+      font-size: 12px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #334155;
+    }
+    .divider:not(:empty)::before { margin-right: .5em; }
+    .divider:not(:empty)::after { margin-left: .5em; }
+    
+    .history-card {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-left: 4px solid #10b981;
+      text-align: left;
+    }
+    .history-card.danger { border-left-color: #ef4444; }
+    .history-card.warning { border-left-color: #f59e0b; }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .history-verdict { font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+    .history-findings { font-size: 11px; color: #cbd5e1; list-style-type: disc; padding-left: 16px; margin: 0; }
+    .scan-status {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .history-list {
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app-container">
+    
+    <!-- Auth Screen -->
+    <div id="auth-view" class="view">
+      <div class="logo-area">
+        <div class="shield-icon">🛡️</div>
+        <h1>Phishing Forensics</h1>
+        <p class="subtitle">AI-Powered Email Security</p>
+      </div>
+
+      <div class="tabs">
+        <button id="tab-login" class="tab active">Login</button>
+        <button id="tab-signup" class="tab">Sign Up</button>
+      </div>
+
+      <div class="form-group">
+        <input type="email" id="email" placeholder="Email Address" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <div class="consent-box" id="consent-container" style="display: none;">
+          <input type="checkbox" id="consent" />
+          <label for="consent">I accept the Terms & Conditions</label>
+        </div>
+        <button id="auth-btn" class="btn-primary">Authenticate</button>
+        
+        <div class="divider">OR</div>
+        
+        <button id="google-btn" class="google-btn">
+          <svg class="google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Sign in with Google
+        </button>
+
+        <div id="auth-error" class="error-msg"></div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard Screen -->
+    <div id="sandbox-view" class="view hidden">
+      <header>
+        <div class="header-left">
+          <span class="shield-small">🛡️</span>
+          <h2>Forensic Scanner</h2>
+        </div>
+        <button id="logout-btn" class="btn-icon" title="Logout">🚪</button>
+      </header>
+
+      <div class="content">
+        <div class="scan-status">
+          <span>⚡</span>
+          <span><strong>AI is active.</strong> Open emails in Gmail to automatically scan them.</span>
+        </div>
+
+        <h3 style="margin-bottom: 12px; font-size: 14px; color: #f8fafc;">Recent Scans</h3>
+        <div id="history-container" class="history-list">
+          <p style="color: #64748b; font-size: 12px; text-align: center; margin-top: 20px;">Loading history...</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

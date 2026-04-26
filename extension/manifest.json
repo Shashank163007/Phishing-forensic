@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Phishing Forensics",
+  "version": "1.0",
+  "description": "AI-powered Chrome extension that auto-scans Gmail emails and returns forensic reports.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://mail.google.com/*",
+    "https://*.vercel.app/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Phishing Forensics"
+  },
+  "oauth2": {
+    "client_id": "896065093959-4tub8shgi0k8uucdot3n6tp6vmtbs8oi.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile"
+    ]
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
