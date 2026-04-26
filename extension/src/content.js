@@ -100,6 +100,48 @@ function analyzeEmailNode(node) {
 
     // Display result
     injectRiskPopup(node, response.result);
+    
+    // Highlight phrases in the email body
+    if (response.result.suspicious_phrases && response.result.suspicious_phrases.length > 0) {
+      highlightSuspiciousPhrases(node, response.result.suspicious_phrases);
+    }
+  });
+}
+
+function highlightSuspiciousPhrases(node, phrases) {
+  // Sort phrases by length descending to prevent partial match bugs
+  phrases.sort((a, b) => b.length - a.length);
+
+  const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null, false);
+  const textNodes = [];
+  while (walker.nextNode()) {
+    // Ignore text inside scripts, styles, or our own popups
+    if (walker.currentNode.parentNode.nodeName !== 'SCRIPT' && 
+        walker.currentNode.parentNode.nodeName !== 'STYLE' &&
+        !walker.currentNode.parentNode.closest('.pf-risk-popup')) {
+      textNodes.push(walker.currentNode);
+    }
+  }
+
+  textNodes.forEach(textNode => {
+    let text = textNode.nodeValue;
+    let modified = false;
+
+    phrases.forEach(phrase => {
+      if (phrase.length < 4) return; // Ignore very short phrases
+      // Simple case-insensitive replacement
+      const regex = new RegExp(`(${phrase.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')})`, 'gi');
+      if (regex.test(text)) {
+        text = text.replace(regex, `<mark style="background-color: #fef08a; color: #991b1b; padding: 2px 4px; border-radius: 4px; font-weight: bold; border-bottom: 2px solid #ef4444; cursor: help;" title="Threat flagged by Phishing Forensics AI">$1</mark>`);
+        modified = true;
+      }
+    });
+
+    if (modified) {
+      const span = document.createElement('span');
+      span.innerHTML = text;
+      textNode.parentNode.replaceChild(span, textNode);
+    }
   });
 }
 

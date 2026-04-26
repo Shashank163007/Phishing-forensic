@@ -64,7 +64,7 @@ h1 { font-size: 22px; font-weight: 700; margin-top: 8px; }
 .tab.active { background: var(--primary); color: white; }
 
 .form-group { display: flex; flex-direction: column; gap: 12px; }
-input[type="email"], input[type="password"], textarea {
+input[type="email"], input[type="password"], input[type="text"], textarea {
   width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);

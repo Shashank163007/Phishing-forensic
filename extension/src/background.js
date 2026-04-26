@@ -33,7 +33,8 @@ async function handleEmailAnalysis(emailData) {
       "overall_risk": "GREEN" | "AMBER" | "RED",
       "risk_score": 0 to 100,
       "verdict": "Short explanation",
-      "findings": ["finding 1", "finding 2"]
+      "findings": ["finding 1", "finding 2"],
+      "suspicious_phrases": ["exact phrase 1 from email", "exact phrase 2 from email"]
     }`;
 
     const response = await fetch(GROQ_URL, {
@@ -62,19 +63,21 @@ async function handleEmailAnalysis(emailData) {
 
     const aiResult = JSON.parse(textResponse);
     
-    // Save to Firestore if user is logged in
-    const user = auth.currentUser;
-    if (user) {
-      await addDoc(collection(db, 'users', user.uid, 'history'), {
-        subject: emailData.subject,
-        sender: emailData.sender,
-        score: aiResult.risk_score,
-        level: aiResult.overall_risk.toLowerCase(),
-        verdict: aiResult.verdict,
-        flags: aiResult.findings,
-        timestamp: serverTimestamp()
-      });
-    }
+    // Save to Firestore asynchronously without blocking the AI response
+    auth.authStateReady().then(() => {
+      const user = auth.currentUser;
+      if (user) {
+        addDoc(collection(db, 'users', user.uid, 'history'), {
+          subject: emailData.subject,
+          sender: emailData.sender,
+          score: aiResult.risk_score,
+          level: aiResult.overall_risk.toLowerCase(),
+          verdict: aiResult.verdict,
+          flags: aiResult.findings,
+          timestamp: serverTimestamp()
+        }).catch(err => console.error("Firestore save error:", err));
+      }
+    });
 
     return aiResult;
   } catch (error) {

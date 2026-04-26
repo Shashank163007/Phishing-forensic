@@ -7,7 +7,7 @@ import {
   GoogleAuthProvider,
   signInWithCredential
 } from 'firebase/auth';
-import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, limit, setDoc, doc } from 'firebase/firestore';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Elements
@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabLogin = document.getElementById('tab-login');
   const tabSignup = document.getElementById('tab-signup');
   const authBtn = document.getElementById('auth-btn');
-  const googleBtn = document.getElementById('google-btn');
   const logoutBtn = document.getElementById('logout-btn');
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
@@ -55,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tabSignup.classList.remove('active');
     authBtn.textContent = 'Login';
     consentContainer.style.display = 'none';
+    document.getElementById('signup-fields').style.display = 'none';
     authError.textContent = '';
   });
 
@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tabLogin.classList.remove('active');
     authBtn.textContent = 'Sign Up';
     consentContainer.style.display = 'flex';
+    document.getElementById('signup-fields').style.display = 'block';
     authError.textContent = '';
   });
 
@@ -77,9 +78,19 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (!isLogin && !consentCheckbox.checked) {
-      authError.textContent = 'You must accept the terms.';
-      return;
+    if (!isLogin) {
+      if (!consentCheckbox.checked) {
+        authError.textContent = 'You must accept the terms.';
+        return;
+      }
+      const fullname = document.getElementById('fullname').value;
+      const org = document.getElementById('organization').value;
+      const role = document.getElementById('role').value;
+      
+      if (!fullname || !org || !role) {
+        authError.textContent = 'Please provide Name, Organization, and Role.';
+        return;
+      }
     }
 
     authBtn.textContent = 'Authenticating...';
@@ -89,36 +100,21 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        // Save additional details to Firestore
+        await setDoc(doc(db, 'users', userCred.user.uid), {
+          email: email,
+          fullName: document.getElementById('fullname').value,
+          organization: document.getElementById('organization').value,
+          role: document.getElementById('role').value,
+          createdAt: new Date().toISOString()
+        });
       }
     } catch (error) {
       authError.textContent = `Error: ${error.message}`;
     } finally {
       authBtn.textContent = isLogin ? 'Login' : 'Sign Up';
       authBtn.disabled = false;
-    }
-  });
-
-  // Google Auth
-  googleBtn.addEventListener('click', () => {
-    authError.textContent = '';
-    
-    if (typeof chrome !== 'undefined' && chrome.identity) {
-      chrome.identity.getAuthToken({ interactive: true }, async function(token) {
-        if (chrome.runtime.lastError) {
-          authError.textContent = chrome.runtime.lastError.message;
-          return;
-        }
-        
-        try {
-          const credential = GoogleAuthProvider.credential(null, token);
-          await signInWithCredential(auth, credential);
-        } catch (error) {
-          authError.textContent = `Google Auth Error: ${error.message}`;
-        }
-      });
-    } else {
-      authError.textContent = 'Google Login requires Chrome Extension context.';
     }
   });
 
