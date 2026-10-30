@@ -74,7 +74,7 @@ The project is structured as a monorepo containing three core components:
 ## ⚙️ Installation & Setup
 
 ### Prerequisites
-*   [Node.js](https://nodejs.org/) (v18 or higher recommended)
+*   [Node.js](https://nodejs.org/) (v20.9 or higher; required by the dashboard)
 *   Google Gemini API Key (obtained from [Google AI Studio](https://aistudio.google.com/))
 *   Google Chrome (or any Chromium-based browser supporting unpacked MV3 extensions)
 
@@ -143,3 +143,15 @@ The repository is configured as an npm monorepo workspace. You can manage everyt
 *   **Webpack & Resource Resolving**: `CopyPlugin` in `webpack.config.js` moves HTML templates and style assets. Webpack bundles JS modules into flat files inside the `dist/` folder.
 *   **Dev URL Configurations**: By default, `extension/src/popup.js` and `extension/src/background.js` point to `http://localhost:5000`. Update this URL to your deployed Vercel domain when moving to production.
 *   **Security Disclaimer**: This tool is an AI-assisted detection client. Always double-check domain origins and email metadata directly on critical systems.
+
+---
+
+## Contributing
+
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, validation steps, and pull request process. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+To report a security vulnerability, use the private process in [SECURITY.md](SECURITY.md) rather than opening a public issue.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). Third-party dependencies and assets may have their own licenses.

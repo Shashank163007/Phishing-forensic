@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest a focused improvement to the project.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include real email contents, personal information, credentials, API keys, or other sensitive data. For security vulnerabilities, use the private reporting process in [SECURITY.md](https://github.com/Shashank163007/Phishing-forensic/blob/main/SECURITY.md).
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Explain the user need or problem this request addresses.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe any alternatives or trade-offs you have considered.
+    validations:
+      required: false
