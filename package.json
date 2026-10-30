@@ -1,5 +1,21 @@
 {
-  "devDependencies": {
-    "webpack-cli": "^7.0.2"
+  "name": "phishing-forensics-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Phishing Forensics - AI-powered Gmail extension, Express backend & SOC dashboard",
+  "workspaces": [
+    "backend",
+    "dashboard",
+    "extension"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "build": "npm run build --workspaces --if-present",
+    "build:extension": "npm run build --workspace=phishing-forensics-extension",
+    "build:dashboard": "npm run build --workspace=phishing-forensics-dashboard",
+    "dev:backend": "npm run dev --workspace=phishing-forensics-backend",
+    "dev:dashboard": "npm run dev --workspace=phishing-forensics-dashboard",
+    "dev:extension": "npm run watch --workspace=phishing-forensics-extension",
+    "lint": "npm run lint --workspace=phishing-forensics-dashboard"
   }
 }

@@ -46,17 +46,18 @@ The project is structured as a monorepo containing three core components:
     *   `index.js`: Main Express.js server with routes for user auth and email forensics.
     *   `api/analyze.js`: Serverless handler for hosting on Vercel.
     *   `data/`: File-based database storing users (`users.json`) and scanning records (`history.json`).
-*   **`extension/`**: Manifest V3 Chrome Extension source files.
+*   **`extension/`**: Manifest V3 Chrome Extension source files and Webpack compiler.
     *   `manifest.json`: Configuration, permissions (activeTab, tabs, storage, identity), and host matching constraints (`mail.google.com`).
     *   `src/content.js`: DOM observer that scans opened emails in Gmail, injects forensic verdicts, and highlights threats inline.
     *   `src/background.js`: Service worker forwarding email bodies to the analysis backend.
     *   `src/popup.html` / `popup.js`: Extension control interface for user authentication and quick history review.
-    *   `webpack.config.js`: Webpack bundle config for compiling extension sources into a production-ready `dist/` directory.
-*   **`dashboard/`**: The Security Operations Center (SOC) dashboard.
+    *   `dist/`: Production-ready compiled extension bundle ready for Chrome.
+*   **`dashboard/`**: The Security Operations Center (SOC) Next.js 16 dashboard.
     *   `app/`: Next.js 16 app directory containing core routing (`page.tsx`), layout configuration (`layout.tsx`), and styling (`globals.css`).
     *   `components/`: Reusable interface elements (custom UI fields, charts, theme providers, and cyberpunk-style layouts).
-    *   `public/`: Static resources and asset files.
-    *   `index.html` / `app.js` *(Root)*: Legacy static version of the dashboard integrated directly with Firebase Firestore.
+    *   `hooks/`: Shared React hooks (`use-toast.ts`, `use-mobile.ts`).
+*   **`docs/`**: Presentations and project documentation (e.g. `Zero-Trust-Security-for-Your-Inbox.pptx`).
+*   **`legacy/`**: Preserved historical and prototype files (standalone HTML/JS Firebase dashboard and early demos).
 
 ---
 
@@ -79,66 +80,50 @@ The project is structured as a monorepo containing three core components:
 
 ---
 
-### 1. Backend Configuration
-1.  Navigate to the `backend/` directory:
-    ```bash
-    cd backend
-    ```
-2.  Install dependencies:
+### Quick Start (Root Monorepo Workspaces)
+
+The repository is configured as an npm monorepo workspace. You can manage everything directly from the project root:
+
+1.  **Install all dependencies**:
     ```bash
     npm install
     ```
-3.  Create a `.env` file in the root of the `backend/` folder:
+
+2.  **Configure Environment Variables**:
+    Create `backend/.env` (or copy from `.env.example`):
     ```env
     PORT=5000
     GOOGLE_API_KEY=your_gemini_api_key_here
     ```
-4.  Run the backend:
+
+3.  **Build All Packages**:
     ```bash
-    # Run in development mode
-    npm run dev
+    npm run build
     ```
-    The server will start at `http://localhost:5000`.
+    This simultaneously bundles the Chrome extension into `extension/dist/` and compiles the Next.js SOC dashboard.
+
+4.  **Run Development Servers**:
+    *   **Backend API** (port 5000):
+        ```bash
+        npm run dev:backend
+        ```
+    *   **SOC Dashboard** (port 3000):
+        ```bash
+        npm run dev:dashboard
+        ```
+    *   **Extension (Watch Mode)**:
+        ```bash
+        npm run dev:extension
+        ```
 
 ---
 
-### 2. Extension Compilation & Installation
-1.  Navigate to the `extension/` directory:
-    ```bash
-    cd extension
-    ```
-2.  Install building tools and Firebase client:
-    ```bash
-    npm install
-    ```
-3.  Compile scripts using Webpack:
-    ```bash
-    npx webpack --mode production
-    ```
-    This generates a `dist/` directory containing the compiled extension bundle.
-4.  Install in Google Chrome:
-    *   Open Chrome and type `chrome://extensions/` in the URL bar.
-    *   Toggle **Developer mode** (top-right corner).
-    *   Click **Load unpacked** (top-left corner).
-    *   Select the compiled `extension/dist/` directory.
-    *   *Note: Ensure the backend is running at `http://localhost:5000` to allow the extension to communicate.*
-
----
-
-### 3. SOC Dashboard Deployment
-1.  Navigate to the `dashboard/` directory:
-    ```bash
-    cd dashboard
-    ```
-2.  Install modern dependencies (Next.js, Radix, Tailwind v4, Recharts, Lucide):
-    ```bash
-    npm install
-    ```
-3.  Run the Next.js development server:
-    ```bash
-    npm run dev
-    ```
-    The interactive SOC dashboard will be available at `http://localhost:3000`.
+### Loading the Extension in Google Chrome
+1.  Open Chrome and type `chrome://extensions/` in the URL bar.
+2.  Toggle **Developer mode** (top-right corner).
+3.  Click **Load unpacked** (top-left corner).
+4.  Select the `extension/dist/` directory.
+5.  *Note: Make sure the backend server is running on `http://localhost:5000` to allow the extension to analyze emails.*
 
 ---
 
