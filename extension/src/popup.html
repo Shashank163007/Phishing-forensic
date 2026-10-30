@@ -7,41 +7,6 @@
   <link rel="stylesheet" href="popup.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    .google-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      background-color: #ffffff;
-      color: #0f172a;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 10px;
-      transition: background 0.2s;
-    }
-    .google-btn:hover { background-color: #e2e8f0; }
-    .google-icon { width: 18px; height: 18px; }
-    .divider {
-      display: flex;
-      align-items: center;
-      text-align: center;
-      margin: 16px 0;
-      color: #64748b;
-      font-size: 12px;
-    }
-    .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      border-bottom: 1px solid #334155;
-    }
-    .divider:not(:empty)::before { margin-right: .5em; }
-    .divider:not(:empty)::after { margin-left: .5em; }
-    
     .history-card {
       background: #1e293b;
       border-radius: 8px;
@@ -122,7 +87,7 @@
       </div>
     </div>
 
-    <!-- Main Dashboard Screen -->
+    <!-- Main Extension Screen -->
     <div id="sandbox-view" class="view hidden">
       <header>
         <div class="header-left">
@@ -137,10 +102,6 @@
           <span>⚡</span>
           <span><strong>AI is active.</strong> Open emails in Gmail to automatically scan them.</span>
         </div>
-
-        <button id="open-dashboard" class="btn-primary" style="width: 100%; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          📊 Open SOC Dashboard
-        </button>
 
         <h3 style="margin-bottom: 12px; font-size: 14px; color: #f8fafc;">Recent Scans</h3>
         <div id="history-container" class="history-list">

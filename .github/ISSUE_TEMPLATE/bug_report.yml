@@ -13,9 +13,8 @@ body:
     attributes:
       label: Affected component
       options:
-        - Backend
         - Chrome extension
-        - Dashboard
+        - Companion API
         - Documentation
         - Other
     validations:

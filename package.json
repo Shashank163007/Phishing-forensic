@@ -1,21 +1,15 @@
 {
-  "name": "phishing-forensics-monorepo",
+  "name": "phishing-forensics-chrome-extension",
   "version": "1.0.0",
   "private": true,
-  "description": "Phishing Forensics - AI-powered Gmail extension, Express backend & SOC dashboard",
+  "description": "AI-powered Gmail phishing detection Chrome extension with a companion analysis API",
   "workspaces": [
     "backend",
-    "dashboard",
     "extension"
   ],
   "scripts": {
-    "install:all": "npm install",
-    "build": "npm run build --workspaces --if-present",
-    "build:extension": "npm run build --workspace=phishing-forensics-extension",
-    "build:dashboard": "npm run build --workspace=phishing-forensics-dashboard",
+    "build": "npm run build --workspace=phishing-forensics-extension",
     "dev:backend": "npm run dev --workspace=phishing-forensics-backend",
-    "dev:dashboard": "npm run dev --workspace=phishing-forensics-dashboard",
-    "dev:extension": "npm run watch --workspace=phishing-forensics-extension",
-    "lint": "npm run lint --workspace=phishing-forensics-dashboard"
+    "dev:extension": "npm run watch --workspace=phishing-forensics-extension"
   }
 }

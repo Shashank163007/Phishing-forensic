@@ -25,19 +25,18 @@ Thanks for helping improve Phishing Forensics. Contributions of bug fixes, docum
    GOOGLE_API_KEY=your_gemini_api_key_here
    ```
 
-   Keep real credentials out of Git. The dashboard uses `http://localhost:5000` by default; set `NEXT_PUBLIC_BACKEND_URL` only when you need a different backend URL.
+   Keep real credentials out of Git. The extension's companion API uses `http://localhost:5000` by default.
 
-4. Build the dashboard and extension:
+4. Build the Chrome extension:
 
    ```sh
    npm run build
    ```
 
-5. To run components during development, use separate terminals:
+5. To develop the extension and its companion API, use separate terminals:
 
    ```sh
    npm run dev:backend
-   npm run dev:dashboard
    npm run dev:extension
    ```
 
@@ -58,7 +57,7 @@ Run this from the repository root before opening a pull request:
 npm run build
 ```
 
-This builds the dashboard and extension. The project does not currently have an automated test suite; include the manual verification you performed in the pull request description. The GitHub Actions workflow runs the same production build.
+This builds the Chrome extension. The project does not currently have an automated test suite; include the manual verification you performed in the pull request description. The GitHub Actions workflow runs the same production build.
 
 ## Pull requests
 

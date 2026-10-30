@@ -38,14 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     sandboxView.classList.remove('hidden');
   }
 
-  // Dashboard button
-  const dashboardBtn = document.getElementById('open-dashboard');
-  if (dashboardBtn) {
-    dashboardBtn.addEventListener('click', () => {
-      chrome.tabs.create({ url: 'https://dashboard-tan-gamma-24.vercel.app' });
-    });
-  }
-
   // Tabs
   tabLogin.addEventListener('click', () => {
     isLogin = true;
